@@ -1,0 +1,16 @@
+//IR sensor
+
+const int IR_PIN = 13;   // IR sensor OUT connected to digital pin 13
+
+void setup() {
+  pinMode(IR_PIN, INPUT);
+  Serial.begin(115200);
+}
+
+void loop() {
+  int irValue = digitalRead(IR_PIN);  // Will return 0 or 1
+
+  Serial.println(irValue);  // Prints 1 or 0 in Serial Monitor
+
+  delay(100);
+}
