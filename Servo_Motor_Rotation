@@ -1,0 +1,54 @@
+//Servo motor
+
+#include <Arduino.h>
+
+const int servoPin = 18;
+const int pwmFreq = 50;
+const int pwmResolution = 16;
+
+// SG90 Specific values (16-bit @ 50Hz)
+// 500µs  → 65535 × (500/20000)  = 1638  → 0°
+// 1500µs → 65535 × (1500/20000) = 4915  → 90°
+// 2400µs → 65535 × (2400/20000) = 7864  → 180°
+
+const uint32_t dutyMin = 1638;  // 0°
+const uint32_t dutyMid = 4915;  // 90°
+const uint32_t dutyMax = 7864;  // 180°
+
+const int stepDelay = 12;       // ms per step — SG90 response time
+
+uint32_t angleToDuty(int angle) {
+  return (uint32_t)map(angle, 0, 180, dutyMin, dutyMax);
+}
+
+void setup() {
+  Serial.begin(115200);
+  ledcAttach(servoPin, pwmFreq, pwmResolution);
+
+  // Center SG90 at 90° before sweeping
+  Serial.println("Centering SG90 to 90°...");
+  ledcWrite(servoPin, dutyMid);
+  delay(1000);
+  Serial.println("Sweep starting...");
+}
+
+void loop() {
+
+  // Clockwise: 0° → 180°
+  Serial.println(">> Clockwise");
+  for (int angle = 0; angle <= 180; angle++) {
+    ledcWrite(servoPin, angleToDuty(angle));
+    delay(stepDelay);
+  }
+
+  delay(300);
+
+  // Anti-clockwise: 180° → 0°
+  Serial.println("<< Anti-clockwise");
+  for (int angle = 180; angle >= 0; angle--) {
+    ledcWrite(servoPin, angleToDuty(angle));
+    delay(stepDelay);
+  }
+
+  delay(300);
+}
