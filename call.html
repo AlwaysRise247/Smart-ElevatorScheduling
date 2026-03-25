@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Smart Lift Control</title>
+  <style>
+    body {
+      font-family: Arial;
+      text-align: center;
+      background: #f2f2f2;
+      margin-top: 50px;
+    }
+
+    .box {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      width: 320px;
+      margin: auto;
+      box-shadow: 0 0 15px rgba(0,0,0,0.2);
+    }
+
+    h1 { margin-bottom: 20px; }
+
+    .floor {
+      font-size: 48px;
+      margin: 20px 0;
+      color: #2c3e50;
+    }
+
+    button {
+      padding: 12px 20px;
+      font-size: 16px;
+      margin: 8px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    #connectBtn { background: #3498db; color: white; }
+    #callBtn { background: #2ecc71; color: white; }
+
+    #status { margin-top: 10px; font-weight: bold; }
+  </style>
+</head>
+
+<body>
+
+<div class="box">
+
+  <h1>Smart Lift</h1>
+
+  <button id="connectBtn">Connect Lift</button>
+
+  <div id="status">Status: Not Connected</div>
+
+  <div>Current Floor</div>
+  <div id="floorDisplay" class="floor">--</div>
+
+  <button id="callBtn" disabled>CALL LIFT</button>
+
+</div>
+
+<script>
+let device, server, service;
+let notifyChar, writeChar;
+
+s
+const SERVICE_UUID = "1234";
+const NOTIFY_UUID = "abcd";
+const WRITE_UUID = "efgh";
+const USER_FLOOR = 4; // change as needed
+
+// 🔹 CONNECT BUTTON
+document.getElementById("connectBtn").onclick = connectBLE;
+
+async function connectBLE() {
+  try {
+    device = await navigator.bluetooth.requestDevice({
+      filters: [{ name: "SmartLiftESP32" }],
+      optionalServices: [SERVICE_UUID]
+    });
+
+    server = await device.gatt.connect();
+    service = await server.getPrimaryService(SERVICE_UUID);
+
+    notifyChar = await service.getCharacteristic(NOTIFY_UUID);
+    writeChar = await service.getCharacteristic(WRITE_UUID);
+
+    await notifyChar.startNotifications();
+    notifyChar.addEventListener(
+      "characteristicvaluechanged",
+      handleNotifications
+    );
+
+    document.getElementById("status").innerText = "Status: Connected";
+    document.getElementById("callBtn").disabled = false;
+
+  } catch (error) {
+    alert("Connection failed: " + error);
+  }
+}
+
+// 🔹 HANDLE FLOOR UPDATES FROM ESP32
+function handleNotifications(event) {
+  const value = new TextDecoder().decode(event.target.value);
+
+  if (value.startsWith("FLOOR:")) {
+    const floor = parseInt(value.split(":")[1]);
+
+    document.getElementById("floorDisplay").innerText = floor;
+
+    // Popup when lift is one floor away
+    if (floor === USER_FLOOR - 1) {
+      alert("Lift is about to arrive!");
+    }
+  }
+}
+
+// 🔹 CALL BUTTON
+document.getElementById("callBtn").onclick = async () => {
+  const encoder = new TextEncoder();
+  await writeChar.writeValue(encoder.encode("CALL:" + USER_FLOOR));
+};
+</script>
+
+</body>
+</html>

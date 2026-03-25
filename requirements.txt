@@ -1,0 +1,7 @@
+requirements :
+
+A web app that displays the following :
+1. current floor number where lift is present
+2. A call button that informs the ESP32 device to turn ON the motor, if not already ON.
+3. A mechanism that pops up a message whenever lift is about to arrive at the caller's floor (if lift has been called from 4th floor, he should get a pop up when lift crosses 3rd floor)
+4. On clicking the call button, the Bluetooth connection between the web application and the ESP32 should be already up and running, and the hardware device needs to know the current floor no. of the elevator, which will be displayed on the web application. 
