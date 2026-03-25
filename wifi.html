@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Smart Lift Control (WiFi)</title>
+  <style>
+    body {
+      font-family: Arial;
+      text-align: center;
+      background: #f2f2f2;
+      margin-top: 50px;
+    }
+
+    .box {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      width: 320px;
+      margin: auto;
+      box-shadow: 0 0 15px rgba(0,0,0,0.2);
+    }
+
+    h1 { margin-bottom: 20px; }
+
+    .floor {
+      font-size: 48px;
+      margin: 20px 0;
+      color: #2c3e50;
+    }
+
+    button {
+      padding: 12px 20px;
+      font-size: 16px;
+      margin: 8px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    #callBtn { background: #2ecc71; color: white; }
+
+    #status {
+      margin-top: 10px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="box">
+  <h1>Smart Lift</h1>
+
+  <div id="status">Status: Connecting...</div>
+
+  <div>Current Floor</div>
+  <div id="floorDisplay" class="floor">--</div>
+
+  <button id="callBtn">CALL LIFT</button>
+</div>
+
+<script>
+const ESP32_IP = "http://192.168.1.10"; // 🔥 CHANGE THIS
+const USER_FLOOR = 4;
+
+let lastFloor = null;
+
+// 🔹 Fetch current floor from ESP32
+async function getFloor() {
+  try {
+    const res = await fetch(`${ESP32_IP}/status`);
+    const floor = parseInt(await res.text());
+
+    document.getElementById("floorDisplay").innerText = floor;
+    document.getElementById("status").innerText = "Status: Connected";
+
+    // Arrival popup logic
+    if (lastFloor !== null && floor === USER_FLOOR - 1) {
+      alert("Lift is about to arrive!");
+    }
+
+    lastFloor = floor;
+
+  } catch (error) {
+    document.getElementById("status").innerText = "Status: Disconnected";
+    console.log(error);
+  }
+}
+
+// 🔹 Call lift
+async function callLift() {
+  try {
+    await fetch(`${ESP32_IP}/call`);
+    alert("Lift called!");
+  } catch (error) {
+    alert("Failed to call lift");
+  }
+}
+
+// 🔹 Button click
+document.getElementById("callBtn").onclick = callLift;
+
+// 🔹 Auto-refresh every second
+setInterval(getFloor, 1000);
+
+// Initial call
+getFloor();
+</script>
+
+</body>
+</html>
