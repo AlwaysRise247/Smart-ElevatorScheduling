@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Smart Lift Control (WiFi)</title>
+  <style>
+    body {
+      font-family: Arial;
+      text-align: center;
+      background: #f2f2f2;
+      margin-top: 50px;
+    }
+
+    .box {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      width: 320px;
+      margin: auto;
+      box-shadow: 0 0 15px rgba(0,0,0,0.2);
+    }
+
+    h1 { margin-bottom: 20px; }
+
+    .floor {
+      font-size: 48px;
+      margin: 20px 0;
+      color: #2c3e50;
+      transition: all 0.3s ease;
+    }
+
+    button {
+      padding: 12px 20px;
+      font-size: 16px;
+      margin: 8px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    #callBtn { background: #2ecc71; color: white; }
+    #resetBtn { background: #e74c3c; color: white; }
+
+    #status {
+      margin-top: 10px;
+      font-weight: bold;
+    }
+
+    /* Notification popup */
+    #notification {
+      display: none;
+      position: fixed;
+      top: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #2ecc71;
+      color: white;
+      padding: 16px 30px;
+      border-radius: 10px;
+      font-size: 18px;
+      font-weight: bold;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      z-index: 999;
+      animation: fadeIn 0.4s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; top: 10px; }
+      to   { opacity: 1; top: 30px; }
+    }
+  </style>
+</head>
+
+<body>
+
+<!-- Notification Banner -->
+<div id="notification">🔔 Lift has arrived at your floor!</div>
+
+<div class="box">
+  <h1>Smart Lift</h1>
+
+  <div id="status">Status: Connecting...</div>
+
+  <div>Current Floor</div>
+  <div id="floorDisplay" class="floor">--</div>
+
+  <button id="callBtn">CALL LIFT</button>
+  <button id="resetBtn">RESET</button>
+</div>
+
+<script>
+const ESP32_IP = "http://10.136.23.42";
+const USER_FLOOR = 3; // 🔥 Notify when lift reaches this floor
+
+let simulatedFloor = 0;
+let simInterval = null;
+let notified = false;
+
+// 🔔 Show notification banner
+function showNotification(msg) {
+  const notif = document.getElementById("notification");
+  notif.innerText = msg;
+  notif.style.display = "block";
+  setTimeout(() => { notif.style.display = "none"; }, 4000);
+}
+
+// 🔹 Simulate floor rising from 0 to 3
+function startSimulation() {
+  simulatedFloor = 0;
+  notified = false;
+  document.getElementById("status").innerText = "Status: Lift Moving...";
+
+  simInterval = setInterval(() => {
+    simulatedFloor++;
+    document.getElementById("floorDisplay").innerText = simulatedFloor;
+
+    if (simulatedFloor >= USER_FLOOR && !notified) {
+      notified = true;
+      document.getElementById("status").innerText = "Status: Arrived!";
+      showNotification("🔔 Lift is about to arrive at your Floor " +  "!");
+      clearInterval(simInterval);
+    }
+  }, 1500); // ⏱ Changes floor every 1.5 seconds
+}
+
+// 🔹 Reset button
+function resetLift() {
+  clearInterval(simInterval);
+  notified = false;
+  simulatedFloor = 0;
+  document.getElementById("floorDisplay").innerText = "0";
+  document.getElementById("status").innerText = "Status: Ready";
+}
+
+let isConnected = false;
+
+// 🔹 Check if ESP32 is reachable
+async function checkConnection() {
+  try {
+    const res = await fetch(`${ESP32_IP}/status`);
+    await res.text();
+    isConnected = true;
+    document.getElementById("status").innerText = "Status: Connected ✅";
+    document.getElementById("callBtn").disabled = false;
+    document.getElementById("callBtn").style.background = "#2ecc71";
+  } catch (error) {
+    isConnected = false;
+    document.getElementById("status").innerText = "Status: Disconnected ❌";
+    document.getElementById("callBtn").disabled = true;
+    document.getElementById("callBtn").style.background = "#aaa";
+  }
+}
+
+// 🔹 Call lift button — only works if ESP32 is connected
+async function callLift() {
+  if (!isConnected) {
+    alert("ESP32 is not connected!");
+    return;
+  }
+
+  clearInterval(simInterval);
+
+  try {
+    await fetch(`${ESP32_IP}/call`);
+    startSimulation();
+  } catch (error) {
+    isConnected = false;
+    document.getElementById("status").innerText = "Status: Disconnected ❌";
+    document.getElementById("callBtn").disabled = true;
+    document.getElementById("callBtn").style.background = "#aaa";
+    alert("ESP32 disconnected! Cannot call lift.");
+  }
+}
+
+document.getElementById("callBtn").onclick = callLift;
+document.getElementById("resetBtn").onclick = resetLift;
+
+// 🔹 Initial state — button disabled until connected
+document.getElementById("floorDisplay").innerText = "0";
+document.getElementById("status").innerText = "Status: Connecting...";
+document.getElementById("callBtn").disabled = true;
+document.getElementById("callBtn").style.background = "#aaa";
+
+// 🔹 Check connection every 3 seconds
+checkConnection();
+setInterval(checkConnection, 3000);
+</script>
+
+</body>
+</html>
