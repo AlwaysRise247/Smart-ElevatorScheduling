@@ -1,0 +1,36 @@
+#include <WiFi.h>
+#include <WebServer.h>
+
+const char* ssid = "Chinmay's Galaxy A22 5G";
+const char* password = "wlxr8496";
+
+WebServer server(80);
+
+void setup() {
+  Serial.begin(115200);
+  WiFi.begin(ssid, password);
+
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+
+  Serial.println("\nConnected! IP:");
+  Serial.println(WiFi.localIP());
+
+  server.on("/status", []() {
+    server.sendHeader("Access-Control-Allow-Origin", "*");  // 👈
+    server.send(200, "text/plain", "3");
+  });
+
+  server.on("/call", []() {
+    server.sendHeader("Access-Control-Allow-Origin", "*");  // 👈
+    server.send(200, "text/plain", "OK");
+  });
+
+  server.begin();
+}
+
+void loop() {
+  server.handleClient();
+}
