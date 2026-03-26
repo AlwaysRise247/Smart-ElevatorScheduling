@@ -89,13 +89,13 @@
 
 <script>
 const ESP32_IP = "http://10.136.23.42";
-const USER_FLOOR = 3; // 🔥 Notify when lift reaches this floor
+const USER_FLOOR = 3; 
 
 let simulatedFloor = 0;
 let simInterval = null;
 let notified = false;
 
-// 🔔 Show notification banner
+
 function showNotification(msg) {
   const notif = document.getElementById("notification");
   notif.innerText = msg;
@@ -103,7 +103,7 @@ function showNotification(msg) {
   setTimeout(() => { notif.style.display = "none"; }, 4000);
 }
 
-// 🔹 Simulate floor rising from 0 to 3
+
 function startSimulation() {
   simulatedFloor = 0;
   notified = false;
@@ -119,7 +119,7 @@ function startSimulation() {
       showNotification("🔔 Lift is about to arrive at your Floor " +  "!");
       clearInterval(simInterval);
     }
-  }, 1500); // ⏱ Changes floor every 1.5 seconds
+  }, 1500); // Changes floor every 1.5 seconds
 }
 
 // 🔹 Reset button
